@@ -9,32 +9,42 @@ project(clibus)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG v1.14.0
-)
-FetchContent_Declare(
-    cpp-httplib
-    GIT_REPOSITORY https://github.com/yhirose/cpp-httplib.git
-    GIT_TAG v0.18.0
-)
-set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-FetchContent_MakeAvailable(googletest cpp-httplib)
+set(CLIBUS_EXTERNAL_DIR ${CMAKE_SOURCE_DIR}/external)
 
-enable_testing()
+find_package(GTest QUIET)
+if(NOT GTest_FOUND)
+    if(EXISTS ${CLIBUS_EXTERNAL_DIR}/googletest-1.17.0)
+        add_subdirectory(${CLIBUS_EXTERNAL_DIR}/googletest-1.17.0 ${CMAKE_BINARY_DIR}/googletest)
+        set(GTest_FOUND TRUE)
+    else()
+        message(WARNING "GTest not found, tests will be skipped. Install via: brew install googletest")
+    endif()
+endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
-include_directories(${cpp-httplib_SOURCE_DIR})
+
+if(EXISTS ${CLIBUS_EXTERNAL_DIR}/cpp-httplib-0.38.0)
+    include_directories(${CLIBUS_EXTERNAL_DIR}/cpp-httplib-0.38.0)
+else()
+    message(FATAL_ERROR "cpp-httplib not found in external/cpp-httplib-0.38.0")
+endif()
+
+if(EXISTS ${CLIBUS_EXTERNAL_DIR}/googletest-1.17.0/googletest/include)
+    include_directories(${CLIBUS_EXTERNAL_DIR}/googletest-1.17.0/googletest/include)
+    include_directories(${CLIBUS_EXTERNAL_DIR}/googletest-1.17.0/googlemock/include)
+endif()
 
 add_library(clibus_core src/clibus.cpp)
 
 add_executable(clibus src/main.cpp)
 target_link_libraries(clibus clibus_core)
 
-add_executable(clibus_test test/clibus_test.cpp)
-target_link_libraries(clibus_test clibus_core gtest_main)
-
-include(GoogleTest)
-gtest_discover_tests(clibus_test)
+if(GTest_FOUND)
+    enable_testing()
+    
+    add_executable(clibus_test test/clibus_test.cpp)
+    target_link_libraries(clibus_test clibus_core gtest_main)
+    
+    include(GoogleTest)
+    gtest_discover_tests(clibus_test)
+endif()

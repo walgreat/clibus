@@ -7,16 +7,15 @@ This file provides guidelines and commands for agents working on the clibus code
 ```
 clibus/
 ├── include/clibus/     # Public headers
-│   ├── i_http_client.h
-│   └── http_client.h
+│   └── clibus.h
 ├── src/                # Source code
 │   ├── clibus.cpp
-│   ├── clibus.h
-│   ├── http_client.cpp
 │   └── main.cpp
 ├── test/               # Test code
-│   ├── clibus_test.cpp
-│   └── mock_http_client.h
+│   └── clibus_test.cpp
+├── external/          # External dependencies
+│   ├── cpp-httplib-0.38.0/
+│   └── googletest-1.17.0/
 ├── build/              # Build output (gitignored)
 └── CMakeLists.txt
 ```
@@ -34,10 +33,10 @@ cmake --build .
 ### Build Targets
 
 ```bash
-cmake --build .              # Build everything
-cmake --build . --target clibus       # Build main executable
-cmake --build . --target clibus_core # Build core library
-cmake --build . --target clibus_test  # Build test executable
+cmake --build .                  # Build everything
+cmake --build . --target clibus           # Build main executable
+cmake --build . --target clibus_core     # Build core library
+cmake --build . --target clibus_test     # Build test executable
 ```
 
 ### Running the Application
@@ -87,11 +86,11 @@ rm -rf build && mkdir build && cd build && cmake .. && cmake --build .
 
 | Element | Style | Example |
 |---------|-------|---------|
-| Classes | PascalCase | `HttpClient`, `IHttpClient` |
-| Functions | camelCase | `print_help()`, `createHttpClient()` |
-| Variables | camelCase | `base_url`, `response_body` |
+| Classes | PascalCase | `HttpClient`, `MyClass` |
+| Functions | snake_case | `print_help()`, `create_client()` |
+| Variables | snake_case | `base_url`, `response_body` |
 | Constants | kCamelCase | `kMaxRetries` |
-| Headers | snake_case | `http_client.h`, `i_http_client.h` |
+| Headers | snake_case | `http_client.h`, `my_class.h` |
 | Namespaces | snake_case | `clibus`, `testing` |
 
 ### File Organization
@@ -112,31 +111,26 @@ rm -rf build && mkdir build && cd build && cmake .. && cmake --build .
 - Use `const` wherever possible (const parameters, const member functions)
 - Prefer value semantics unless performance requires references
 
-### Interfaces
-
-- Define interfaces in headers with `I` prefix (e.g., `IHttpClient`)
-- Use abstract base classes with virtual destructor
-- Provide factory functions for creation (e.g., `createHttpClient()`)
-- Return interfaces via `std::unique_ptr<IInterface>`
-
 ### Error Handling
 
 - Use return codes or result types for error conditions
 - Avoid exceptions unless absolutely necessary
-- Provide error messages in `HttpResponse.error` field
 
 ### Testing
 
 - Test files go in `test/` directory
 - Use Google Test (gtest) framework
-- Mock interfaces with hand-written mocks in `test/mock_*.h`
-- Test naming: `TEST(ClassName, MethodName_Behavior)`
+- Test naming: `TEST(TestSuite, MethodName_Behavior)`
+- Use `extern` declarations to access library functions from tests:
+  ```cpp
+  extern void print_help();
+  ```
 
 ### Dependencies
 
-- **httplib**: HTTP client library (header-only)
-- **gtest**: Testing framework (via FetchContent)
-- All dependencies are managed via CMake FetchContent
+- **httplib**: HTTP client library (header-only), located in `external/cpp-httplib-0.38.0/`
+- **gtest**: Testing framework, located in `external/googletest-1.17.0/`
+- Dependencies are managed via external directories, NOT FetchContent
 
 ### Import Guidelines
 
@@ -147,8 +141,7 @@ rm -rf build && mkdir build && cd build && cmake .. && cmake --build .
 
 #include "httplib.h"
 
-#include "clibus/http_client.h"
-#include "clibus/i_http_client.h"
+#include "clibus/clibus.h"
 ```
 
 ### Class Definition Order
@@ -173,3 +166,26 @@ TEST(TestSuite, TestName) {
     EXPECT_EQ(actual, expected);
 }
 ```
+
+### CMake Best Practices
+
+- Always check if external directories exist before adding subdirectories
+- Use `find_package` first, fallback to local external directories
+- Add include directories conditionally based on existence
+- Use target-specific includes when possible instead of global `include_directories`
+
+### Adding New Source Files
+
+When adding new source files:
+
+1. Add header to `include/clibus/`
+2. Add implementation to `src/`
+3. Update `CMakeLists.txt` - add source to `add_library` or `add_executable`
+4. Rebuild: `cmake --build .`
+
+### Adding Tests
+
+1. Add test file to `test/` directory
+2. Use `extern` to declare functions from clibus_core
+3. Link against `clibus_core` and `gtest_main` in CMakeLists.txt
+4. Tests are automatically discovered via `gtest_discover_tests`

@@ -1,4 +1,4 @@
-#include "clibus.h"
+#include "clibus/clibus.h"
 
 int main() {
     print_help();

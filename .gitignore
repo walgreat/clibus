@@ -4,6 +4,8 @@ _deps/**
 lib/**
 Makefile
 CMakeFiles/**
+.cmake_deps/**
+.idea/**
 # Prerequisites
 *.d
 
