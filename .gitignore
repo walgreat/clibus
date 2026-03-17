@@ -1,3 +1,9 @@
+Testing/**
+build/**
+_deps/**
+lib/**
+Makefile
+CMakeFiles/**
 # Prerequisites
 *.d
 
