@@ -1,7 +1,8 @@
 #include <string>
+#include <memory>
 #include "gtest/gtest.h"
-
-extern void print_help();
+#include "gmock/gmock.h"
+#include "clibus/clibus.h"
 
 TEST(PrintHelpTest, PrintsClibus) {
     testing::internal::CaptureStdout();
