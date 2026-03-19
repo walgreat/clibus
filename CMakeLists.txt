@@ -51,4 +51,8 @@ if(GTest_FOUND)
     include(GoogleTest)
     gtest_discover_tests(clibus_test)
     gtest_discover_tests(fetchurl_test)
+
+    add_executable(post_test test/post_test.cpp)
+    target_link_libraries(post_test clibus_core gmock_main gtest_main)
+    gtest_discover_tests(post_test)
 endif()
